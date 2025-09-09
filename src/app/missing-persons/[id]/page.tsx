@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useCallback, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import { useDropzone } from 'react-dropzone';
 import { pessoasPerdidas } from '@/data/mock-data';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CalendarDays,
   MapPin,
@@ -13,34 +15,387 @@ import {
   Phone,
   MessageSquare,
   Share2,
+  X,
+  Plus,
+  UploadCloud,
 } from 'lucide-react';
 import { use } from 'react';
+
+// Helper function to format dates
+const formatDate = (dateString: string) => {
+  const options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  };
+  return new Date(dateString).toLocaleDateString('pt-BR', options);
+};
+
+interface FormData {
+  informacao: string;
+  descricao: string;
+  data: string;
+}
 
 export default function MissingPersonDetails({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-    const { id } = use(params)
-
+  const { id } = use(params);
   const person = pessoasPerdidas.find((p) => p.id === Number(id));
 
   if (!person) {
     notFound();
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Data não informada';
-    return new Date(dateString).toLocaleString('pt-BR');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    informacao: '',
+    descricao: '',
+    data: '',
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen]);
+
+  if (!person) {
+    notFound();
+  }
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const selectedFile = acceptedFiles[0];
+    if (selectedFile) {
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (selectedFile.size > maxSize) {
+        alert('O arquivo é muito grande. O tamanho máximo permitido é 5MB.');
+        return;
+      }
+
+      setFile(selectedFile);
+      // Create preview for images
+      if (selectedFile.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFilePreview(reader.result as string);
+        };
+        reader.readAsDataURL(selectedFile);
+      } else {
+        setFilePreview(null);
+      }
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
+    },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
+    multiple: false,
+  });
+
+  const removeFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFile(null);
+    setFilePreview(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Create FormData to handle file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('informacao', formData.informacao);
+      formDataToSend.append('descricao', formData.descricao);
+      formDataToSend.append('data', formData.data);
+      if (file) {
+        formDataToSend.append('arquivo', file);
+      }
+
+      // Here you would typically make an API call to submit the form data
+      console.log(
+        'Submitting form:',
+        Object.fromEntries(formDataToSend.entries())
+      );
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Reset form and close modal on success
+      setFormData({ informacao: '', descricao: '', data: '' });
+      setFile(null);
+      setFilePreview(null);
+      setIsModalOpen(false);
+      // You might want to show a success message here
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      // Handle error (show error message to user)
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <motion.main
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="container mx-auto px-4 py-8"
+      className="container mx-auto px-4 py-8 relative"
     >
+      {/* Add Information Button */}
+      <motion.button
+        onClick={() => setIsModalOpen(true)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 z-10"
+      >
+        <Plus className="w-5 h-5" />
+        <span>Adicionar Informação</span>
+      </motion.button>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-opacity-50 backdrop-blur-sm z-20 flex items-center justify-center p-4"
+              onClick={() => !isSubmitting && setIsModalOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md relative border border-gray-200 dark:border-gray-700 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => !isSubmitting && setIsModalOpen(false)}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  disabled={isSubmitting}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                  Adicionar Informação
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="informacao"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Informação
+                    </label>
+                    <textarea
+                      id="informacao"
+                      name="informacao"
+                      value={formData.informacao}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                      required
+                      disabled={isSubmitting}
+                      style={{ resize: 'none' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="data"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      Data da visualização da Pessoa
+                    </label>
+                    <input
+                      type="datetime-local"
+                      id="data"
+                      name="data"
+                      value={formData.data}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Anexar Arquivo
+                    </label>
+                    <div
+                      {...getRootProps()}
+                      className={`border-2 border-dashed rounded-lg p-6 transition-colors ${
+                        isDragActive
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-800/50'
+                      } cursor-pointer`}
+                    >
+                      <input {...getInputProps()} disabled={isSubmitting} />
+                      {file ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {(file.size / 1024).toFixed(1)} KB •{' '}
+                                {file.type.split('/')[1]?.toUpperCase() ||
+                                  'Arquivo'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={removeFile}
+                              className="ml-4 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                              disabled={isSubmitting}
+                              title="Remover arquivo"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          {filePreview && (
+                            <div className="mt-2 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden">
+                              <div className="bg-gray-50 dark:bg-gray-700 p-2 text-center">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Pré-visualização
+                                </p>
+                              </div>
+                              <div className="relative bg-white dark:bg-gray-800 p-2 flex justify-center">
+                                <img
+                                  src={filePreview}
+                                  alt="Pré-visualização"
+                                  className="max-h-32 max-w-full object-contain"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                              Arraste outro arquivo para substituir ou{' '}
+                              <span className="text-blue-600 dark:text-blue-400 font-medium cursor-pointer">
+                                selecione um arquivo
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center space-y-4">
+                          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                            <UploadCloud className="w-12 h-12 text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                              Arraste e solte seu arquivo aqui, ou clique para
+                              selecionar
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Qualquer tipo de arquivo (Máx. 5MB)
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full">
+                    <label
+                      htmlFor="descricao"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left"
+                    >
+                      Descrição do Arquivo (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      id="descricao"
+                      name="descricao"
+                      value={formData.descricao}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="Descreva o arquivo anexado"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                      disabled={isSubmitting}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 flex items-center gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Enviando...
+                        </>
+                      ) : (
+                        'Enviar Informação'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
       <motion.div
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
