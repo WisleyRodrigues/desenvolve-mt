@@ -127,49 +127,6 @@ export default function MissingPersonCard({ pessoa }: MissingPersonCardProps) {
             </div>
           )}
         </div>
-
-        {/* Additional information */}
-        <div className="mt-4 pt-2 border-t border-gray-100">
-          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Informações Adicionais
-          </h4>
-          <div className="space-y-3">
-            {pessoa.ultimaOcorrencia.ocorrenciaEntrevDesapDTO.informacao && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Informações</p>
-                    <p className="text-sm text-gray-700 line-clamp-3">
-                      {pessoa.ultimaOcorrencia.ocorrenciaEntrevDesapDTO.informacao}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {pessoa.ultimaOcorrencia.ocorrenciaEntrevDesapDTO.vestimentasDesaparecido && (
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-0.5">
-                  <svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M3 7L6 4H9C9 4.39397 9.0776 4.78407 9.22836 5.14805C9.37913 5.51203 9.6001 5.84274 9.87868 6.12132C10.1573 6.3999 10.488 6.62087 10.8519 6.77164C11.2159 6.9224 11.606 7 12 7C12.394 7 12.7841 6.9224 13.1481 6.77164C13.512 6.62087 13.8427 6.3999 14.1213 6.12132C14.3999 5.84274 14.6209 5.51203 14.7716 5.14805C14.9224 4.78407 15 4.39397 15 4H18L21 7L20.5785 11.2152C20.542 11.5801 20.1382 11.7829 19.8237 11.5942L18 10.5V18C18 19.1046 17.1046 20 16 20H8C6.89543 20 6 19.1046 6 18V10.5L4.17629 11.5942C3.86184 11.7829 3.45801 11.5801 3.42152 11.2152L3 7Z" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-</svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Vestimentas</p>
-                      <p className="text-sm text-gray-700 line-clamp-2">
-                        {pessoa.ultimaOcorrencia.ocorrenciaEntrevDesapDTO.vestimentasDesaparecido}
-                      </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
