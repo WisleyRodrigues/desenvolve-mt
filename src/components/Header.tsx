@@ -87,7 +87,7 @@ export default function Header() {
               </Link>
             </motion.div>
             <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/missing-persons" className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
+              <Link href="/pessoas-desaparecidas" className="text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors">
                 Pessoas Desaparecidas
               </Link>
             </motion.div>
@@ -193,7 +193,7 @@ export default function Header() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Link 
-                    href="/missing-persons" 
+                    href="/pessoas-desaparecidas" 
                     className="block px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 rounded-md transition-all duration-300"
                     onClick={() => setIsMenuOpen(false)}
                   >

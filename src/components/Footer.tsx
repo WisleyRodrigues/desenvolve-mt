@@ -128,7 +128,7 @@ export default function Footer() {
             >
               {[
                 { name: 'Início', href: '/' },
-                { name: 'Pessoas Desaparecidas', href: '/missing-persons' },
+                { name: 'Pessoas Desaparecidas', href: '/pessoas-desaparecidas' },
               ].map((link, index) => (
                 <motion.li 
                   key={link.name}

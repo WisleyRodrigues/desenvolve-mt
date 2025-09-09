@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import MissingPersonCard from '@/components/MissingPersonCard';
 import { Pagination } from '@/components/Pagination';
 import { MissingPerson } from '@/types/missingPerson';
+import Link from 'next/link'
 
 // Mock data - replace with actual API call
 import { pessoasPerdidas } from '@/data/mock-data';
@@ -26,8 +27,9 @@ export default function MissingPersonsPage() {
     // In a real app, this would be an API call with query parameters
     const filtered = pessoasPerdidas.filter((person) => {
       // Search term filter
-      const matchesSearch =
-        person.nome.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = person.nome
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
       // Status filter
       const matchesStatus =
@@ -330,22 +332,24 @@ export default function MissingPersonsPage() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
                 {currentItems.map((person) => (
-                  <motion.div
-                    key={person.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      show: {
-                        opacity: 1,
-                        y: 0,
-                        transition: {
-                          type: 'spring',
-                          stiffness: 100,
+                  <Link href={`/pessoas-desaparecidas/${person.id}`} key={person.id}>
+                    <motion.div
+                      key={person.id}
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        show: {
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            type: 'spring',
+                            stiffness: 100,
+                          },
                         },
-                      },
-                    }}
-                  >
-                    <MissingPersonCard pessoa={person} />
-                  </motion.div>
+                      }}
+                    >
+                      <MissingPersonCard pessoa={person} />
+                    </motion.div>
+                  </Link>
                 ))}
               </motion.div>
             </>
@@ -353,7 +357,7 @@ export default function MissingPersonsPage() {
         </div>
       </section>
 
-       {/* Pagination */}
+      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalItems={filteredPersons.length}

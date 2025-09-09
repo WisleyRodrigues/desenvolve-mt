@@ -65,7 +65,7 @@ export default function Home() {
               transition={{ delay: 0.3 }}
             >
               <motion.a
-                href="/missing-persons"
+                href="/pessoas-desaparecidas"
                 className="px-8 py-4 bg-blue-600 w-fit mx-auto text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 inline-flex items-center"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}

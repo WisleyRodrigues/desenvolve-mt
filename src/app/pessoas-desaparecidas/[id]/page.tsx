@@ -407,7 +407,7 @@ export default function MissingPersonDetails({
         {/* Header with back button */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-900">
           <motion.a
-            href="/missing-persons"
+            href="/pessoas-desaparecidas"
             whileHover={{ x: -3 }}
             className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mb-4 transition-colors"
           >
