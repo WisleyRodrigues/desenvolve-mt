@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
 import MissingPersonCard from '@/components/MissingPersonCard';
 import { Pagination } from '@/components/Pagination';
 import { MissingPerson } from '@/types/missingPerson';
@@ -11,7 +10,6 @@ import { MissingPerson } from '@/types/missingPerson';
 import { pessoasPerdidas } from '@/data/mock-data';
 
 export default function MissingPersonsPage() {
-  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [genderFilter, setGenderFilter] = useState<string>('all');
@@ -29,10 +27,7 @@ export default function MissingPersonsPage() {
     const filtered = pessoasPerdidas.filter((person) => {
       // Search term filter
       const matchesSearch =
-        person.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        person.ultimaOcorrencia.localDesaparecimentoConcat
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+        person.nome.toLowerCase().includes(searchTerm.toLowerCase())
 
       // Status filter
       const matchesStatus =
@@ -57,13 +52,10 @@ export default function MissingPersonsPage() {
     setIsLoading(false);
   }, [searchTerm, statusFilter, genderFilter, ageRange]);
 
-  // Handle search from URL query params
-  useEffect(() => {
-    const search = searchParams.get('search');
-    if (search) {
-      setSearchTerm(search);
-    }
-  }, [searchParams]);
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   const container = {
     hidden: { opacity: 0 },
@@ -163,7 +155,7 @@ export default function MissingPersonsPage() {
                   placeholder="Buscar por nome da pessoa."
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                 />
               </div>
 
