@@ -29,8 +29,6 @@ const item = {
 } as const;
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-  
   return (
     <motion.footer 
       initial="hidden"

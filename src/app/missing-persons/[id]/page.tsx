@@ -8,13 +8,11 @@ import { pessoasPerdidas } from '@/data/mock-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CalendarDays,
-  MapPin,
   User,
   Info,
   AlertTriangle,
   Phone,
   MessageSquare,
-  Share2,
   X,
   Plus,
   UploadCloud,
@@ -293,10 +291,14 @@ export default function MissingPersonDetails({
                                 </p>
                               </div>
                               <div className="relative bg-white dark:bg-gray-800 p-2 flex justify-center">
-                                <img
+                                <Image
                                   src={filePreview}
+                                  
+                                  	sizes="(max-width: 25000px) 5vw, 5vw"
                                   alt="Pré-visualização"
-                                  className="max-h-32 max-w-full object-contain"
+                                  width={150}
+                                  height={100}
+                                  className="max-h-64 max-w-full object-contain"
                                 />
                               </div>
                             </div>
@@ -492,7 +494,7 @@ export default function MissingPersonDetails({
 
           {/* Person Details */}
           <div className="md:w-2/3 p-6">
-            <div
+            <motion.div
               className="space-y-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -683,7 +685,7 @@ export default function MissingPersonDetails({
                   </div>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </motion.div>

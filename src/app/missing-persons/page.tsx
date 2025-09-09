@@ -47,7 +47,7 @@ export default function MissingPersonsPage() {
         person.sexo === (genderFilter === 'male' ? 'MASCULINO' : 'FEMININO');
 
       // Age range filter
-      const personAge = parseInt(person.idade);
+      const personAge = person.idade;
       const matchesAge = personAge >= ageRange[0] && personAge <= ageRange[1];
 
       return matchesSearch && matchesStatus && matchesGender && matchesAge;
@@ -73,11 +73,6 @@ export default function MissingPersonsPage() {
         staggerChildren: 0.1,
       },
     },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100 } },
   };
 
   // Get current items
