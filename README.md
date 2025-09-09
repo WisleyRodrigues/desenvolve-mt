@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Desenvolve MT - Plataforma de Pessoas Desaparecidas
 
-## Getting Started
+## 📋 Sobre o Projeto
 
-First, run the development server:
+O ABITUS é uma plataforma web desenvolvida para auxiliar no registro e localização de pessoas desaparecidas no estado de Mato Grosso. A aplicação permite que usuários cadastrem informações sobre desaparecimentos, busquem por pessoas desaparecidas e compartilhem informações relevantes.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 🚀 Tecnologias Utilizadas
+
+- **Frontend**: Next.js 15 com React 19
+- **Estilização**: Tailwind CSS
+- **Mapas**: Google Maps API
+- **Formulários**: React Hook Form com validação Zod
+- **Ícones**: Heroicons e Lucide React
+- **Build**: Turbopack
+- **Containerização**: Docker
+
+## 🛠️ Como Executar Localmente
+
+### Pré-requisitos
+
+- Node.js 18 ou superior
+- npm ou yarn
+- Conta no Google Cloud Platform com a API do Google Maps ativada
+
+### Configuração do Ambiente
+
+1. Clone o repositório:
+   ```bash
+   git clone [URL_DO_REPOSITÓRIO]
+   cd desenvolve-mt
+   ```
+
+2. Instale as dependências:
+   ```bash
+   npm install
+   # ou
+   yarn install
+   ```
+
+3. Crie um arquivo `.env.local` na raiz do projeto com as seguintes variáveis:
+   ```env
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=sua_chave_da_api_google_maps
+   ```
+
+4. Execute o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   # ou
+   yarn dev
+   ```
+
+5. Acesse a aplicação em [http://localhost:3000](http://localhost:3000)
+
+## 🐳 Executando com Docker
+
+### Usando Docker Compose (Recomendado)
+
+1. Certifique-se de ter o Docker e Docker Compose instalados
+
+2. Crie o arquivo `.env` na raiz do projeto (se ainda não existir) com as variáveis necessárias
+
+3. Execute o comando:
+   ```bash
+   docker-compose up --build
+   ```
+
+4. A aplicação estará disponível em [http://localhost:3000](http://localhost:3000)
+
+### Usando apenas Docker
+
+1. Construa a imagem:
+   ```bash
+   docker build -t desenvolve-mt .
+   ```
+
+2. Execute o container:
+   ```bash
+   docker run -p 3000:3000 --env-file .env desenvolve-mt
+   ```
+
+## 🏗️ Estrutura do Projeto
+
+```
+desenvolve-mt/
+├── public/             # Arquivos estáticos
+├── src/
+│   ├── app/            # Rotas da aplicação (Next.js 13+ App Router)
+│   ├── components/     # Componentes React reutilizáveis
+│   ├── data/           # Dados mockados (se aplicável)
+│   └── lib/            # Utilitários e configurações
+├── .eslintrc.js        # Configuração do ESLint
+├── next.config.js      # Configuração do Next.js
+├── package.json        # Dependências e scripts
+└── tsconfig.json       # Configuração do TypeScript
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📝 Licença
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Este projeto está sob a licença [MIT](LICENSE).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🤝 Como Contribuir
 
-## Learn More
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
+3. Adicione suas mudanças (`git add .`)
+4. Comite suas alterações (`git commit -m 'Adiciona uma nova feature'`)
+5. Faça o Push da Branch (`git push origin feature/AmazingFeature`)
+6. Abra um Pull Request
 
-To learn more about Next.js, take a look at the following resources:
+## 📞 Contato
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para mais informações, entre em contato com a equipe de desenvolvimento.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Desenvolvido com ❤️ para ajudar a comunidade de Mato Grosso
