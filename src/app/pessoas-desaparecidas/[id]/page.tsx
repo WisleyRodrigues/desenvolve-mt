@@ -18,6 +18,7 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { use } from 'react';
+import { missingPersonsService, type MissingPerson } from '@/services/missingPersonsService';
 
 // Helper function to format dates
 const formatDate = (dateString: string) => {
@@ -28,6 +29,33 @@ const formatDate = (dateString: string) => {
     timeZone: 'UTC',
   };
   return new Date(dateString).toLocaleDateString('pt-BR', options);
+};
+
+// Helper function to format dates safely
+const formatDateSafe = (dateString: string | undefined) => {
+  if (!dateString) return 'Data não informada';
+  try {
+    return formatDate(dateString);
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return 'Data inválida';
+  }
+};
+
+// Safely access nested properties with type safety
+const getNestedValue = <T,>(obj: any, path: string, defaultValue: T): T => {
+  if (!obj) return defaultValue;
+  const keys = path.split('.');
+  let result: any = obj;
+  
+  for (const key of keys) {
+    result = result?.[key];
+    if (result === undefined || result === null) {
+      return defaultValue;
+    }
+  }
+  
+  return result as T;
 };
 
 interface FormData {
@@ -42,11 +70,39 @@ export default function MissingPersonDetails({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const person = pessoasPerdidas.find((p) => p.id === Number(id));
+  const [person, setPerson] = useState<MissingPerson | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!person) {
-    notFound();
-  }
+  // Fetch person details from API
+  useEffect(() => {
+    const fetchPerson = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await missingPersonsService.getById(Number(id));
+        setPerson(data);
+      } catch (err) {
+        console.error('Error fetching person details:', err);
+        setError('Erro ao carregar os detalhes da pessoa. Tente novamente mais tarde.');
+        setPerson(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPerson();
+  }, [id]);
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
+
+ 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,9 +124,6 @@ export default function MissingPersonDetails({
     };
   }, [isModalOpen]);
 
-  if (!person) {
-    notFound();
-  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -157,6 +210,24 @@ export default function MissingPersonDetails({
       setIsSubmitting(false);
     }
   };
+
+  // if (error || !person) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-center p-6 max-w-md mx-auto bg-white rounded-lg shadow-md">
+  //         <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+  //         <h2 className="text-xl font-semibold text-gray-800 mb-2">Erro ao carregar</h2>
+  //         <p className="text-gray-600 mb-4">{error || 'Pessoa não encontrada'}</p>
+  //         <button
+  //           onClick={() => window.location.reload()}
+  //           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+  //         >
+  //           Tentar novamente
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <motion.main
@@ -293,8 +364,7 @@ export default function MissingPersonDetails({
                               <div className="relative bg-white dark:bg-gray-800 p-2 flex justify-center">
                                 <Image
                                   src={filePreview}
-                                  
-                                  	sizes="(max-width: 25000px) 5vw, 5vw"
+                                  sizes="(max-width: 25000px) 5vw, 5vw"
                                   alt="Pré-visualização"
                                   width={150}
                                   height={100}
@@ -435,7 +505,7 @@ export default function MissingPersonDetails({
           >
             <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {person.nome}
+              {person?.nome}
             </h1>
           </motion.div>
           <motion.p
@@ -446,7 +516,7 @@ export default function MissingPersonDetails({
           >
             <CalendarDays className="w-4 h-4" />
             Desaparecido(a) em{' '}
-            {formatDate(person.ultimaOcorrencia.dtDesaparecimento)}
+            {formatDateSafe(person?.ultimaOcorrencia?.dtDesaparecimento)}
           </motion.p>
         </div>
 
@@ -464,8 +534,8 @@ export default function MissingPersonDetails({
               transition={{ type: 'spring', stiffness: 300 }}
             >
               <Image
-                src={person.urlFoto || '/placeholder-person.jpg'}
-                alt={`Foto de ${person.nome}`}
+                src={person?.urlFoto || '/placeholder-person.jpg'}
+                alt={`Foto de ${person?.nome}`}
                 fill
                 className="object-cover"
                 priority
@@ -481,13 +551,13 @@ export default function MissingPersonDetails({
             >
               <span
                 className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium ${
-                  person.vivo === true
+                  person?.vivo === true
                     ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                 }`}
               >
                 <AlertTriangle className="w-4 h-4" />
-                {person.vivo ? 'Desaparecido(a)' : 'Falecido(a)'}
+                {person?.vivo ? 'Desaparecido(a)' : 'Falecido(a)'}
               </span>
             </motion.div>
           </div>
@@ -516,7 +586,7 @@ export default function MissingPersonDetails({
                         Nome Completo
                       </dt>
                       <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                        {person.nome}
+                        {person?.nome}
                       </dd>
                     </div>
                     <div>
@@ -524,7 +594,7 @@ export default function MissingPersonDetails({
                         Idade
                       </dt>
                       <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                        {person.idade} anos
+                        {person?.idade} anos
                       </dd>
                     </div>
                     <div>
@@ -532,7 +602,7 @@ export default function MissingPersonDetails({
                         Gênero
                       </dt>
                       <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                        {person.sexo}
+                        {person?.sexo}
                       </dd>
                     </div>
                   </dl>
@@ -547,40 +617,40 @@ export default function MissingPersonDetails({
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Data do Desaparecimento
                       </dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                        {formatDate(person.ultimaOcorrencia.dtDesaparecimento)}
-                      </dd>
+                      <div className="text-sm">
+                        {formatDateSafe(person?.ultimaOcorrencia?.dtDesaparecimento)}
+                      </div>
                     </div>
-                    {person.ultimaOcorrencia.dataLocalizacao && (
+                    {person?.ultimaOcorrencia?.dataLocalizacao && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Data da Localização
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {formatDate(person.ultimaOcorrencia.dataLocalizacao)}
-                        </dd>
+                        <div className="text-sm">
+                          {formatDateSafe(person?.ultimaOcorrencia?.dataLocalizacao)}
+                        </div>
                       </div>
                     )}
                     <div>
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Local do Desaparecimento
                       </dt>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                        {person.ultimaOcorrencia.localDesaparecimentoConcat ||
-                          'Não informado'}
-                      </dd>
+                      <div className="text-sm">
+                        {person?.ultimaOcorrencia?.localDesaparecimentoConcat ||
+                          'Local não informado'}
+                      </div>
                     </div>
-                    {person.ultimaOcorrencia.ocorrenciaEntrevDesapDTO
-                      ?.vestimentasDesaparecido && (
+                    {getNestedValue<string>(person, 'ultimaOcorrencia.ocorrenciaEntrevDesapDTO.vestimentasDesaparecido', '') && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           Vestimentas
                         </dt>
                         <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200">
-                          {
-                            person.ultimaOcorrencia.ocorrenciaEntrevDesapDTO
-                              .vestimentasDesaparecido
-                          }
+                          {getNestedValue(
+                            person, 
+                            'ultimaOcorrencia.ocorrenciaEntrevDesapDTO.vestimentasDesaparecido', 
+                            'Não informado'
+                          )}
                         </dd>
                       </div>
                     )}
@@ -597,19 +667,13 @@ export default function MissingPersonDetails({
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Informações Adicionais
                 </h3>
-                <dl className="space-y-2">
-                  {person.ultimaOcorrencia.ocorrenciaEntrevDesapDTO
-                    ?.informacao && (
-                    <div>
-                      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-200 whitespace-pre-line">
-                        {
-                          person.ultimaOcorrencia.ocorrenciaEntrevDesapDTO
-                            .informacao
-                        }
-                      </dd>
-                    </div>
+                <div className="text-sm text-gray-500">
+                  {getNestedValue(
+                    person, 
+                    'ultimaOcorrencia.ocorrenciaEntrevDesapDTO.informacao', 
+                    'Nenhuma informação adicional disponível'
                   )}
-                </dl>
+                </div>
               </motion.div>
 
               {/* Contact Information */}
@@ -635,7 +699,7 @@ export default function MissingPersonDetails({
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       Se você tiver qualquer informação sobre o paradeiro de{' '}
                       <span className="font-medium text-blue-600 dark:text-blue-400">
-                        {person.nome.split(' ')[0]}
+                        {person?.nome.split(' ')[0]}
                       </span>
                       , por favor entre em contato:
                     </p>
