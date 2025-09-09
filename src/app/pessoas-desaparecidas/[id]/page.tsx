@@ -180,32 +180,38 @@ export default function MissingPersonDetails({
     setIsSubmitting(true);
 
     try {
-      // Create FormData to handle file upload
-      const formDataToSend = new FormData();
-      formDataToSend.append('informacao', formData.informacao);
-      formDataToSend.append('descricao', formData.descricao);
-      formDataToSend.append('data', formData.data);
-      if (file) {
-        formDataToSend.append('arquivo', file);
+      if (!person?.ultimaOcorrencia?.ocoId) {
+        throw new Error('ID da ocorrência não encontrado');
       }
 
-      // Here you would typically make an API call to submit the form data
-      console.log(
-        'Submitting form:',
-        Object.fromEntries(formDataToSend.entries())
+      const files = file ? [file] : [];
+      
+      // Format date to YYYY-MM-DD
+      const formattedDate = formData.data ? new Date(formData.data).toISOString().split('T')[0] : '';
+      
+      // Call the API to add sighting information
+      await missingPersonsService.addSighting(
+        person.ultimaOcorrencia.ocoId,
+        {
+          informacao: formData.informacao,
+          descricao: formData.descricao,
+          data: formattedDate,
+          files
+        }
       );
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Reset form and close modal on success
       setFormData({ informacao: '', descricao: '', data: '' });
       setFile(null);
       setFilePreview(null);
       setIsModalOpen(false);
-      // You might want to show a success message here
+      
+      // Show success message (you might want to use a toast or alert here)
+      alert('Informação enviada com sucesso!');
     } catch (error) {
-      console.error('Error submitting form:', error);
-      // Handle error (show error message to user)
+      console.error('Erro ao enviar informações:', error);
+      // Show error message to user
+      alert('Ocorreu um erro ao enviar as informações. Por favor, tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -306,7 +312,7 @@ export default function MissingPersonDetails({
                       Data da visualização da Pessoa
                     </label>
                     <input
-                      type="datetime-local"
+                      type="date"
                       id="data"
                       name="data"
                       value={formData.data}
@@ -314,6 +320,7 @@ export default function MissingPersonDetails({
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                       required
                       disabled={isSubmitting}
+                      max={new Date().toISOString().split('T')[0]}
                     />
                   </div>
 
