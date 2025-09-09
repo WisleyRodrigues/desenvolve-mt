@@ -4,57 +4,82 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import MissingPersonCard from '@/components/MissingPersonCard';
 import { Pagination } from '@/components/Pagination';
-import { MissingPerson } from '@/types/missingPerson';
-import Link from 'next/link'
+import Link from 'next/link';
+import {
+  missingPersonsService,
+  type MissingPerson,
+  type MissingPersonFilters,
+} from '@/services/missingPersonsService';
 
-// Mock data - replace with actual API call
-import { pessoasPerdidas } from '@/data/mock-data';
+type AgeRange = [number, number];
 
 export default function MissingPersonsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [genderFilter, setGenderFilter] = useState<string>('all');
-  const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
+  const [ageRange, setAgeRange] = useState<AgeRange>([0, 100]);
   const [filteredPersons, setFilteredPersons] = useState<MissingPerson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // Number of items per page
+  const [itemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  // Apply filters
+  // Fetch data from API
+  const fetchMissingPersons = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const filters: MissingPersonFilters = {
+        nome: searchTerm || undefined,
+        status:
+          statusFilter === 'all'
+            ? undefined
+            : statusFilter === 'found'
+            ? 'LOCALIZADO'
+            : 'DESAPARECIDO',
+        sexo:
+          genderFilter === 'all'
+            ? undefined
+            : genderFilter === 'male'
+            ? 'MASCULINO'
+            : 'FEMININO',
+        faixaIdadeInicial: ageRange[0] > 0 ? ageRange[0] : undefined,
+        faixaIdadeFinal: ageRange[1] < 100 ? ageRange[1] : undefined,
+        pagina: currentPage - 1, // API is 0-based, our UI is 1-based
+        porPagina: itemsPerPage,
+      };
+
+      const response = await missingPersonsService.getAll(filters);
+      setFilteredPersons(response.content);
+      setTotalItems(response.totalElements);
+    } catch (err) {
+      console.error('Error fetching missing persons:', err);
+      setError(
+        'Erro ao carregar a lista de pessoas desaparecidas. Tente novamente mais tarde.'
+      );
+      setFilteredPersons([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle search input change with debounce
   useEffect(() => {
-    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when search changes
+      fetchMissingPersons();
+    }, 500); // 500ms debounce
 
-    // In a real app, this would be an API call with query parameters
-    const filtered = pessoasPerdidas.filter((person) => {
-      // Search term filter
-      const matchesSearch = person.nome
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, genderFilter, ageRange, currentPage]);
 
-      // Status filter
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'found'
-          ? person.ultimaOcorrencia.dataLocalizacao
-          : !person.ultimaOcorrencia.dataLocalizacao);
+  // Initial data fetch
+  useEffect(() => {
+    fetchMissingPersons();
+  }, []);
 
-      // Gender filter
-      const matchesGender =
-        genderFilter === 'all' ||
-        person.sexo === (genderFilter === 'male' ? 'MASCULINO' : 'FEMININO');
-
-      // Age range filter
-      const personAge = person.idade;
-      const matchesAge = personAge >= ageRange[0] && personAge <= ageRange[1];
-
-      return matchesSearch && matchesStatus && matchesGender && matchesAge;
-    });
-
-    setFilteredPersons(filtered);
-    setIsLoading(false);
-  }, [searchTerm, statusFilter, genderFilter, ageRange]);
-
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
@@ -67,24 +92,24 @@ export default function MissingPersonsPage() {
         staggerChildren: 0.1,
       },
     },
-  };
-
-  // Get current items
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredPersons.slice(indexOfFirstItem, indexOfLastItem);
+  } as const;
 
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Optional: Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Reset to first page when filters change
+  // Reset to first page when filters change (except search term which is handled by the debounce effect)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, genderFilter, ageRange]);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      // If already on page 1, refetch data
+      fetchMissingPersons();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, genderFilter, ageRange]);
 
   return (
     <main className="flex-grow bg-gray-50 dark:bg-gray-900">
@@ -272,98 +297,115 @@ export default function MissingPersonsPage() {
       </section>
 
       {/* Results Section */}
-      <section className="py-12" style={{ backgroundColor: '#00435c' }}>
+      <section className="py-8 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4">
-          {isLoading ? (
-            <div className="flex justify-center items-center py-12">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+              {totalItems}{' '}
+              {totalItems === 1 ? 'pessoa encontrada' : 'pessoas encontradas'}
+            </h2>
+          </div>
+          {error ? (
+            <div
+              className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative"
+              role="alert"
+            >
+              <strong className="font-bold">Erro! </strong>
+              <span className="block sm:inline">{error}</span>
+              <button
+                onClick={fetchMissingPersons}
+                className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              >
+                <svg
+                  className="fill-current h-6 w-6 text-red-500"
+                  role="button"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <title>Recarregar</title>
+                  <path d="M14.66 15.66A8 8 0 1 1 17 10h-2a6 6 0 1 0-1.76 4.24l1.42 1.42zM12 10h8l-4 4-4-4z" />
+                </svg>
+              </button>
+            </div>
+          ) : isLoading ? (
+            <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : filteredPersons.length === 0 ? (
             <div className="text-center py-12">
-              <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-8 h-8 text-blue-600 dark:text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-white mb-2">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                 Nenhuma pessoa encontrada
               </h3>
-              <p className="text-gray-300 mb-6">
-                Tente ajustar seus filtros de busca ou tente novamente mais
-                tarde.
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {searchTerm ||
+                statusFilter !== 'all' ||
+                genderFilter !== 'all' ||
+                ageRange[0] > 0 ||
+                ageRange[1] < 100
+                  ? 'Tente ajustar sua busca ou filtros.'
+                  : 'Nenhum registro encontrado.'}
               </p>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setGenderFilter('all');
-                  setAgeRange([0, 100]);
-                }}
-                className="px-4 py-2 bg-white text-blue-600 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                Limpar filtros
-              </button>
             </div>
           ) : (
-            <>
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white">
-                  {filteredPersons.length}{' '}
-                  {filteredPersons.length === 1
-                    ? 'pessoa encontrada'
-                    : 'pessoas encontradas'}
-                </h2>
-              </div>
-              <motion.div
-                variants={container}
-                initial="hidden"
-                animate="show"
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {currentItems.map((person) => (
-                  <Link href={`/pessoas-desaparecidas/${person.id}`} key={person.id}>
-                    <motion.div
-                      key={person.id}
-                      variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        show: {
-                          opacity: 1,
-                          y: 0,
-                          transition: {
-                            type: 'spring',
-                            stiffness: 100,
-                          },
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
+            >
+              {filteredPersons.map((person) => (
+                <Link
+                  href={`/pessoas-desaparecidas/${person.id}`}
+                  key={person.id}
+                >
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      show: {
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 100,
                         },
-                      }}
-                    >
-                      <MissingPersonCard pessoa={person} />
-                    </motion.div>
-                  </Link>
-                ))}
-              </motion.div>
-            </>
+                      },
+                    }}
+                  >
+                    <MissingPersonCard person={person} />
+                  </motion.div>
+                </Link>
+              ))}
+            </motion.div>
           )}
         </div>
       </section>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalItems={filteredPersons.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={handlePageChange}
-      />
+      {totalItems > itemsPerPage && (
+        <div className="py-6 bg-white dark:bg-gray-800">
+          <div className="container mx-auto px-4">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

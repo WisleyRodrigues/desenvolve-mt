@@ -22,3 +22,21 @@ export interface MissingPerson {
   urlFoto: string;
   ultimaOcorrencia: LastOccurrence;
 }
+
+export interface MissingPersonFilters {
+  nome?: string;
+  status?: 'DESAPARECIDO' | 'ENCONTRADO';
+  sexo?: 'MASCULINO' | 'FEMININO';
+  idadeMin?: number;
+  idadeMax?: number;
+  pagina?: number;
+  porPagina?: number;
+}
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
