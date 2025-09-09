@@ -67,12 +67,7 @@ export default function MissingPersonsPage() {
 
   // Handle search input change with debounce
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentPage(1); // Reset to first page when search changes
-      fetchMissingPersons();
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(timer);
+    fetchMissingPersons();
   }, [searchTerm, statusFilter, genderFilter, ageRange, currentPage]);
 
   // Initial data fetch
@@ -97,6 +92,7 @@ export default function MissingPersonsPage() {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    // Don't fetch here, the useEffect with currentPage in its dependency array will handle it
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
